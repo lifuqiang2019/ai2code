@@ -1,0 +1,19 @@
+{
+  "name": "@voyager/editor",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/editor/index.ts",
+  "types": "./src/editor/index.ts",
+  "exports": {
+    ".": "./src/editor/index.ts",
+    "./value": "./src/editor/value/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "dependencies": {
+    "zustand": "^5.0.8"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  }
+}
+

@@ -1,5 +1,5 @@
 {
-  "name": "@adastralab-ai/voyager",
+  "name": "@adastralab-ai/voyager-monorepo",
   "type": "module",
   "private": true,
   "version": "0.0.0",
@@ -7,11 +7,11 @@
     "node": "v22.19.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --build && vite build",
-    "start": "vite preview",
+    "dev": "pnpm --filter @voyager/app dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter @voyager/app start",
     "test": "vitest run",
-    "tsc:check": "tsc --build",
+    "tsc:check": "pnpm -r tsc:check",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "format": "prettier --write .",
