@@ -9,9 +9,10 @@ This project uses pnpm workspaces for monorepo management:
 ```
 /
 ├── packages/
-│   ├── editor/       - Core editor logic and state management
-│   ├── ui/           - React UI components
-│   └── app/          - Main application
+│   ├── editor/         - Core editor logic and state management
+│   ├── ui/             - React UI components
+│   ├── app/            - Main application
+│   └── ai-background/  - AI backend service (NestJS)
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -32,6 +33,13 @@ This project uses pnpm workspaces for monorepo management:
   - Entry point and app composition
   - Vite configuration
   - Development server
+
+- **@voyager/ai-background** - AI Backend Service
+  - NestJS framework
+  - LangChain integration
+  - DeepSeek API for text chat
+  - GLM-4V API for image recognition
+  - RESTful API endpoints
 
 ## Prerequisites
 
@@ -59,14 +67,23 @@ This project uses pnpm workspaces for monorepo management:
 ## Development Commands
 
 ```bash
-# Run dev server
+# Run frontend dev server (default)
 pnpm dev
+# or
+pnpm dev:app
+
+# Run backend service
+pnpm dev:backend
+
+# Run both frontend and backend simultaneously
+pnpm dev:all
 
 # Build all packages
 pnpm build
 
 # Run specific package script
 pnpm --filter @voyager/app dev
+pnpm --filter @voyager/ai-background dev
 pnpm --filter @voyager/editor build
 
 # Lint
@@ -75,6 +92,52 @@ pnpm lint
 # Format
 pnpm format
 ```
+
+## Backend Service Setup
+
+The AI backend service requires additional configuration:
+
+### 1. Create environment file
+
+Copy the example file and add your API keys:
+
+```bash
+cd packages/ai-background
+cp .env.example .env
+```
+
+### 2. Configure API keys in `.env`
+
+```env
+# DeepSeek API 配置（用于文本对话）
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+
+# 智谱 GLM-4V API 配置（用于图片识别）
+GLM_API_KEY=your_glm_api_key_here
+
+# 服务器配置
+PORT=8080
+```
+
+### 3. Start the backend
+
+```bash
+pnpm dev:backend
+```
+
+The backend service will be available at `http://localhost:8080/api`
+
+### Backend API Endpoints
+
+- `GET /api/health` - Health check
+- `POST /api/langchain/chat` - Text chat with DeepSeek
+- `POST /api/langchain/analyze-image-url` - Analyze image from URL
+- `POST /api/langchain/analyze-image-upload` - Analyze uploaded image
+- `POST /api/langchain/ocr` - Extract text from image
+- `POST /api/langchain/detect-objects` - Detect objects in image
+
+For detailed API documentation, see `packages/ai-background/README.md`
 
 ## Features
 

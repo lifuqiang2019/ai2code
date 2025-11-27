@@ -8,8 +8,12 @@
   },
   "scripts": {
     "dev": "pnpm --filter @voyager/app dev",
+    "dev:app": "pnpm --filter @voyager/app dev",
+    "dev:backend": "pnpm --filter @voyager/ai-background dev",
+    "dev:all": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "start": "pnpm --filter @voyager/app start",
+    "start:backend": "pnpm --filter @voyager/ai-background start:prod",
     "test": "vitest run",
     "tsc:check": "pnpm -r tsc:check",
     "lint": "eslint . --fix",
