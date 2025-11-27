@@ -1,9 +1,10 @@
 import { Box, Button, Flex, IconButton, Text } from "@radix-ui/themes";
-import { Download, Redo, Trash2, Undo, Upload } from "lucide-react";
+import { Download, Redo, Trash2, Undo, Upload, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
 import type { DesignEditor } from "../editor";
+import { ImageRecognitionDialog } from "./ImageRecognitionDialog";
 
 interface CanvasToolbarProps {
   editor: DesignEditor;
@@ -11,6 +12,7 @@ interface CanvasToolbarProps {
 
 export const CanvasToolbar = ({ editor }: CanvasToolbarProps) => {
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const [showRecognitionDialog, setShowRecognitionDialog] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const clearButtonWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +113,7 @@ export const CanvasToolbar = ({ editor }: CanvasToolbarProps) => {
       />
       <Flex
         align="center"
-        justify="space-between"
+        justify="between"
         style={{
           background: "var(--color-background)",
           border: "1px solid var(--gray-5)",
@@ -153,6 +155,19 @@ export const CanvasToolbar = ({ editor }: CanvasToolbarProps) => {
         </Flex>
 
         <Flex gap="2">
+          <Button
+            size="2"
+            variant="soft"
+            color="blue"
+            onClick={() => setShowRecognitionDialog(true)}
+            title="从图片识别形状"
+            style={{
+              cursor: "pointer",
+            }}
+          >
+            <Sparkles size={18} strokeWidth={1.5} />
+            AI 识别
+          </Button>
           <Button
             size="2"
             variant="soft"
@@ -256,6 +271,13 @@ export const CanvasToolbar = ({ editor }: CanvasToolbarProps) => {
           )}
         </Box>
       </Flex>
+
+      {/* AI 识别对话框 */}
+      <ImageRecognitionDialog
+        open={showRecognitionDialog}
+        onOpenChange={setShowRecognitionDialog}
+        editor={editor}
+      />
     </Box>
   );
 };

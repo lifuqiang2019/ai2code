@@ -13,6 +13,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@radix-ui/themes": "^3.2.1",
+    "@voyager/editor": "workspace:*",
     "lucide-react": "^0.461.0",
     "zustand": "^5.0.8"
   },

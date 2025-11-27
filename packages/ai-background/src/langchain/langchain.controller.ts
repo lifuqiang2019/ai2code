@@ -11,12 +11,14 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { LangchainService } from './langchain.service';
 import { ImageAnalysisService } from './services/image-analysis.service';
+import { ShapeRecognitionService } from './services/shape-recognition.service';
 
 @Controller('langchain')
 export class LangchainController {
   constructor(
     private readonly langchainService: LangchainService,
     private readonly imageAnalysisService: ImageAnalysisService,
+    private readonly shapeRecognitionService: ShapeRecognitionService,
   ) {}
 
   /**
@@ -173,6 +175,118 @@ export class LangchainController {
         result,
       },
     };
+  }
+
+  /**
+   * 识别画布形状 - 文件上传方式
+   */
+  @Post('recognize-canvas-shapes')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|bmp)$/)) {
+          return cb(new BadRequestException('只支持图片格式！'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
+  async recognizeCanvasShapes(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: { canvasWidth: string; canvasHeight: string },
+  ) {
+    if (!file) {
+      throw new BadRequestException('请上传图片文件');
+    }
+
+    const canvasWidth = parseInt(body.canvasWidth, 10);
+    const canvasHeight = parseInt(body.canvasHeight, 10);
+
+    if (isNaN(canvasWidth) || isNaN(canvasHeight)) {
+      throw new BadRequestException('画布尺寸无效');
+    }
+
+    try {
+      const result = await this.shapeRecognitionService.recognizeShapes(
+        file.path,
+        canvasWidth,
+        canvasHeight,
+      );
+
+      if (!result.hasShapes) {
+        return {
+          success: false,
+          message: result.message || '图片中未识别到项目相关的几何形状',
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          shapes: result.shapes,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  /**
+   * 识别画布形状 - URL 方式
+   */
+  @Post('recognize-canvas-shapes-url')
+  async recognizeCanvasShapesFromUrl(
+    @Body()
+    body: {
+      imageUrl: string;
+      canvasWidth: number;
+      canvasHeight: number;
+    },
+  ) {
+    if (!body.imageUrl) {
+      throw new BadRequestException('图片 URL 不能为空');
+    }
+
+    if (!body.canvasWidth || !body.canvasHeight) {
+      throw new BadRequestException('画布尺寸不能为空');
+    }
+
+    try {
+      const result = await this.shapeRecognitionService.recognizeShapes(
+        body.imageUrl,
+        body.canvasWidth,
+        body.canvasHeight,
+      );
+
+      if (!result.hasShapes) {
+        return {
+          success: false,
+          message: result.message || '图片中未识别到项目相关的几何形状',
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          shapes: result.shapes,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }
 

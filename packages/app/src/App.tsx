@@ -25,7 +25,7 @@ function App() {
     () => new DesignEditor({ value: DEFAULT_EDITOR_VALUE }),
   );
   const [activeShape, setActiveShape] = useState<{
-    label: string;
+    label?: string;
     paths: ShapePath[];
     viewBox: ShapeViewBox;
   } | null>(null);
@@ -88,7 +88,6 @@ function App() {
     ) as HTMLElement;
     if (!canvasElement) return;
 
-    const canvasRect = canvasElement.getBoundingClientRect();
     const designViewElement = canvasElement.querySelector(
       "[tabindex='-1']",
     ) as HTMLElement;

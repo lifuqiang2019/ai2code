@@ -254,6 +254,9 @@ importers:
       '@radix-ui/themes':
         specifier: ^3.2.1
         version: 3.2.1(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@voyager/editor':
+        specifier: workspace:*
+        version: link:../editor
       lucide-react:
         specifier: ^0.461.0
         version: 0.461.0(react@19.2.0)
