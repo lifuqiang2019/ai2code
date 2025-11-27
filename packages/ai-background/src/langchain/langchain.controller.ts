@@ -12,6 +12,7 @@ import { extname } from 'path';
 import { LangchainService } from './langchain.service';
 import { ImageAnalysisService } from './services/image-analysis.service';
 import { ShapeRecognitionService } from './services/shape-recognition.service';
+import { TextToShapeService } from './services/text-to-shape.service';
 
 @Controller('langchain')
 export class LangchainController {
@@ -19,6 +20,7 @@ export class LangchainController {
     private readonly langchainService: LangchainService,
     private readonly imageAnalysisService: ImageAnalysisService,
     private readonly shapeRecognitionService: ShapeRecognitionService,
+    private readonly textToShapeService: TextToShapeService,
   ) {}
 
   /**
@@ -275,6 +277,51 @@ export class LangchainController {
         return {
           success: false,
           message: result.message || '图片中未识别到项目相关的几何形状',
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          shapes: result.shapes,
+          imageSize: result.imageSize,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  /**
+   * 文本生成形状
+   */
+  @Post('text-to-shapes')
+  async textToShapes(
+    @Body() body: {
+      text: string;
+      canvasWidth: number;
+      canvasHeight: number;
+    },
+  ) {
+    if (!body.text) {
+      throw new BadRequestException('文本描述不能为空');
+    }
+
+    if (!body.canvasWidth || !body.canvasHeight) {
+      throw new BadRequestException('画布尺寸不能为空');
+    }
+
+    try {
+      const result = await this.textToShapeService.generateShapesFromText(
+        body.text,
+        body.canvasWidth,
+        body.canvasHeight,
+      );
+
+      if (!result.hasShapes) {
+        return {
+          success: false,
+          message: result.message || '无法根据描述生成形状',
         };
       }
 

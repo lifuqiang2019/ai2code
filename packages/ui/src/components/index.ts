@@ -1,5 +1,6 @@
 export { CanvasToolbar } from "./CanvasToolbar";
 export { EditorContextMenu } from "./EditorContextMenu";
+export { ImageRecognitionDialog } from "./ImageRecognitionDialog";
 export { LayerPanel } from "./LayerPanel";
 export { RightPanel } from "./RightPanel";
 export { RightPanelSection } from "./RightPanelSection";

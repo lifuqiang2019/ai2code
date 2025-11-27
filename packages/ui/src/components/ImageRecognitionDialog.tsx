@@ -14,10 +14,11 @@ import type { ShapeRecognitionResult } from "../services/aiService";
 import {
   recognizeShapesFromFile,
   recognizeShapesFromUrl,
+  generateShapesFromText,
 } from "../services/aiService";
 import { convertRecognizedShapes, optimizeImage } from "../utils/shapeConverter";
 
-type UploadMode = "url" | "file";
+type UploadMode = "url" | "file" | "text";
 
 // 简化的 DesignEditor 接口
 interface DesignEditor {
@@ -44,15 +45,17 @@ export function ImageRecognitionDialog({
   onOpenChange,
   editor,
 }: ImageRecognitionDialogProps) {
-  const [uploadMode, setUploadMode] = useState<UploadMode>("file");
+  const [uploadMode, setUploadMode] = useState<UploadMode>("text");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [textInput, setTextInput] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognizedShapes, setRecognizedShapes] = useState<
     ShapeRecognitionResult[]
   >([]);
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -188,7 +191,19 @@ export function ImageRecognitionDialog({
 
       let response;
 
-      if (uploadMode === "url") {
+      if (uploadMode === "text") {
+        // 文本生成模式
+        if (!textInput.trim()) {
+          setError("请输入形状描述");
+          return;
+        }
+
+        response = await generateShapesFromText(
+          textInput,
+          canvasSize.width,
+          canvasSize.height
+        );
+      } else if (uploadMode === "url") {
         // URL 模式
         response = await recognizeShapesFromUrl(
           imageUrl,
@@ -217,6 +232,7 @@ export function ImageRecognitionDialog({
 
       // 设置识别结果
       setRecognizedShapes(response.data?.shapes || []);
+      setImageSize(response.data?.imageSize || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "网络错误，请重试");
     } finally {
@@ -234,13 +250,17 @@ export function ImageRecognitionDialog({
       height: editor.state.value.attributes.height,
     };
 
-    // 转换为 ShapeDef 并批量创建
-    const shapeDefs = convertRecognizedShapes(recognizedShapes, canvasSize);
-
     // 先清空画布
     editor.clearCanvas();
 
-    // 批量添加识别的形状到画布
+    // 转换为 ShapeDef 并批量创建
+    const shapeDefs = convertRecognizedShapes(
+      recognizedShapes, 
+      canvasSize, 
+      imageSize || undefined
+    );
+
+    // 批量添加到画布
     editor.replaceElements({
       elements: shapeDefs,
       addToHistory: true,
@@ -248,7 +268,7 @@ export function ImageRecognitionDialog({
 
     // 关闭对话框
     onOpenChange(false);
-
+    
     // 重置状态
     handleReset();
   };
@@ -272,9 +292,9 @@ export function ImageRecognitionDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 600 }}>
-        <Dialog.Title>从图片识别形状</Dialog.Title>
+        <Dialog.Title>🎨 AI 形状助手</Dialog.Title>
         <Dialog.Description size="2" mb="4">
-          支持识别 10 种形状：矩形、三角形、圆形、椭圆、菱形、五边形、六边形、星形、箭头、心形
+          ✨ 支持文本生成和图片识别 10 种形状：矩形、三角形、圆形、椭圆、菱形、五边形、六边形、星形、箭头、心形
         </Dialog.Description>
 
         {/* Tab 切换 */}
@@ -283,6 +303,9 @@ export function ImageRecognitionDialog({
           onValueChange={(v) => setUploadMode(v as UploadMode)}
         >
           <Tabs.List>
+            <Tabs.Trigger value="text">
+              ✨ 文本生成
+            </Tabs.Trigger>
             <Tabs.Trigger value="file">
               <Upload size={16} />
               本地上传
@@ -292,6 +315,35 @@ export function ImageRecognitionDialog({
               URL 导入
             </Tabs.Trigger>
           </Tabs.List>
+
+          {/* 文本生成模式 */}
+          <Tabs.Content value="text">
+            <Box mt="4">
+              <Text size="2" mb="2" color="gray">
+                用自然语言描述想要创建的形状，例如：
+              </Text>
+              <Text size="1" color="gray" mb="3">
+                • "画一个红色的圆形在左上角，一个蓝色的矩形在右下角"<br />
+                • "创建3个不同颜色的三角形，从左到右排列"<br />
+                • "画一个大的紫色星星在中间"
+              </Text>
+              <textarea
+                placeholder="请描述你想要创建的形状..."
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "var(--space-3)",
+                  borderRadius: "var(--radius-2)",
+                  border: "1px solid var(--gray-6)",
+                  fontFamily: "inherit",
+                  fontSize: "var(--font-size-2)",
+                  resize: "vertical",
+                }}
+              />
+            </Box>
+          </Tabs.Content>
 
           {/* URL 模式 */}
           <Tabs.Content value="url">
@@ -476,7 +528,7 @@ export function ImageRecognitionDialog({
           {recognizedShapes.length === 0 ? (
             <Button
               onClick={handleRecognize}
-              disabled={!previewUrl || isRecognizing}
+              disabled={!previewUrl && uploadMode !== "text" || isRecognizing}
             >
               {isRecognizing && (
                 <Loader2
@@ -486,7 +538,9 @@ export function ImageRecognitionDialog({
                   }}
                 />
               )}
-              {isRecognizing ? "识别中..." : "开始识别"}
+              {isRecognizing 
+                ? (uploadMode === "text" ? "生成中..." : "识别中...") 
+                : (uploadMode === "text" ? "生成形状" : "开始识别")}
             </Button>
           ) : (
             <Button onClick={handleImportToCanvas}>
@@ -498,4 +552,3 @@ export function ImageRecognitionDialog({
     </Dialog.Root>
   );
 }
-

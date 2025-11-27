@@ -1,9 +1,4 @@
-export interface ShapeViewBox {
-  minX: number;
-  minY: number;
-  width: number;
-  height: number;
-}
+import type { ShapeViewBox } from "@voyager/editor";
 
 export interface ShapePathTemplate {
   viewBox: ShapeViewBox;
@@ -77,4 +72,3 @@ export function getShapePathTemplate(shapeType: string): ShapePathTemplate {
   
   return template;
 }
-

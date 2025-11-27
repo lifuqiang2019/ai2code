@@ -34,6 +34,10 @@ export interface RecognitionResponse {
   message?: string;
   data?: {
     shapes: ShapeRecognitionResult[];
+    imageSize?: {
+      width: number;   // 原始图片宽度（像素）
+      height: number;  // 原始图片高度（像素）
+    };
   };
 }
 
@@ -58,27 +62,12 @@ export async function recognizeShapesFromFile(
       body: formData,
     });
 
-    // 获取响应文本
-    const responseText = await response.text();
-    
     if (!response.ok) {
-      // 尝试解析 JSON 错误消息
-      try {
-        const errorData = JSON.parse(responseText);
-        throw new Error(errorData.message || '识别失败');
-      } catch {
-        // 如果不是 JSON，直接使用文本
-        throw new Error(`服务器错误: ${response.status} - ${responseText || '未知错误'}`);
-      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || '识别失败');
     }
 
-    // 解析成功响应
-    try {
-      return JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('JSON 解析失败:', responseText);
-      throw new Error('服务器返回的数据格式无效');
-    }
+    return await response.json();
   } catch (error) {
     console.error('识别图片失败:', error);
     throw error;
@@ -106,30 +95,47 @@ export async function recognizeShapesFromUrl(
       }),
     });
 
-    // 获取响应文本
-    const responseText = await response.text();
-    
     if (!response.ok) {
-      // 尝试解析 JSON 错误消息
-      try {
-        const errorData = JSON.parse(responseText);
-        throw new Error(errorData.message || '识别失败');
-      } catch {
-        // 如果不是 JSON，直接使用文本
-        throw new Error(`服务器错误: ${response.status} - ${responseText || '未知错误'}`);
-      }
+      const errorData = await response.json();
+      throw new Error(errorData.message || '识别失败');
     }
 
-    // 解析成功响应
-    try {
-      return JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('JSON 解析失败:', responseText);
-      throw new Error('服务器返回的数据格式无效');
-    }
+    return await response.json();
   } catch (error) {
     console.error('识别图片失败:', error);
     throw error;
   }
 }
 
+/**
+ * 文本生成形状
+ */
+export async function generateShapesFromText(
+  text: string,
+  canvasWidth: number,
+  canvasHeight: number,
+): Promise<RecognitionResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/langchain/text-to-shapes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        canvasWidth,
+        canvasHeight,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '生成失败');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('文本生成形状失败:', error);
+    throw error;
+  }
+}

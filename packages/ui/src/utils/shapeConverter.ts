@@ -1,41 +1,9 @@
+import type { ShapeDef } from "../editor";
 import type { ShapeRecognitionResult } from "../services/aiService";
 import { getShapePathTemplate } from "./shapePaths";
 
-// 导入编辑器类型
-// 注意：这里假设类型是从父级暴露的
-export interface ShapeDef {
-  type: "shape";
-  id: string;
-  name?: string;
-  bounds: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-  viewBox: {
-    minX: number;
-    minY: number;
-    width: number;
-    height: number;
-  };
-  paths: Array<{
-    d: string;
-    fill?: { color: string };
-    stroke?: {
-      color: string;
-      weight: number;
-    };
-  }>;
-  transparency?: number;
-}
-
-/**
- * 生成唯一 ID
- */
-function createNodeId(): string {
-  return Math.random().toString(36).substring(2, 15);
-}
+// 临时创建 nodeId 函数（避免导入路径问题）
+const createNodeId = () => crypto.randomUUID();
 
 /**
  * 将 AI 识别结果转换为 ShapeDef
@@ -43,15 +11,19 @@ function createNodeId(): string {
 export function convertRecognizedShapeToShapeDef(
   aiShape: ShapeRecognitionResult,
   canvasSize: { width: number; height: number },
+  imageSize?: { width: number; height: number },
 ): ShapeDef {
   // 1. 获取该形状的 SVG Path 模板
   const pathTemplate = getShapePathTemplate(aiShape.shapeType);
 
-  // 2. 计算实际像素坐标（从百分比转换）
-  const actualX = (aiShape.position.x / 100) * canvasSize.width;
-  const actualY = (aiShape.position.y / 100) * canvasSize.height;
-  const actualWidth = (aiShape.size.width / 100) * canvasSize.width;
-  const actualHeight = (aiShape.size.height / 100) * canvasSize.height;
+  // 2. 确定参考尺寸（优先使用原始图片尺寸，否则使用画布尺寸）
+  const refSize = imageSize || canvasSize;
+
+  // 3. 计算实际像素坐标（从百分比转换，基于图片尺寸）
+  const actualX = (aiShape.position.x / 100) * refSize.width;
+  const actualY = (aiShape.position.y / 100) * refSize.height;
+  const actualWidth = (aiShape.size.width / 100) * refSize.width;
+  const actualHeight = (aiShape.size.height / 100) * refSize.height;
 
   // 3. 应用形变（缩放）
   const transformedWidth = actualWidth * aiShape.transform.scaleX;
@@ -97,13 +69,14 @@ export function convertRecognizedShapeToShapeDef(
 export function convertRecognizedShapes(
   shapes: ShapeRecognitionResult[],
   canvasSize: { width: number; height: number },
+  imageSize?: { width: number; height: number },
 ): ShapeDef[] {
   // 按 zIndex 排序（从小到大，底层先创建）
   const sortedShapes = [...shapes].sort((a, b) => a.zIndex - b.zIndex);
 
   // 转换为 ShapeDef
   return sortedShapes.map((shape) =>
-    convertRecognizedShapeToShapeDef(shape, canvasSize)
+    convertRecognizedShapeToShapeDef(shape, canvasSize, imageSize)
   );
 }
 
@@ -182,4 +155,3 @@ export async function optimizeImage(file: File): Promise<File> {
     reader.readAsDataURL(file);
   });
 }
-
